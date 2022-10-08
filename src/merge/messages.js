@@ -1,5 +1,6 @@
 export const createOp = {
-  set: (id, version, value) => ({
+  set: (type, id, version, value) => ({
+    type,
     id,
     version,
     value,

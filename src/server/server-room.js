@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import Kernal from '../merge/kernal'
-import { createMessage } from '../merge/utils'
+import { createMessage } from '../merge/messages'
 
 export class ServerRoom {
   constructor(slug) {
