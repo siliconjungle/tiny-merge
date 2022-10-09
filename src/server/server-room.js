@@ -1,6 +1,6 @@
 import WebSocket from 'ws'
 import Kernal from '../merge/kernal'
-import { createMessage } from '../merge/messages'
+import { createMessage, createOp } from '../merge/messages'
 import { getSnapshot, setSnapshot } from './database'
 
 export class ServerRoom {
@@ -25,7 +25,8 @@ export class ServerRoom {
 
     switch (message.type) {
       case 'connect': {
-        const { ops } = message
+        const { agentId, ops } = message
+        client.agentId = agentId
         kernal.applyOps(ops, 'remote')
         const snapshotOps = kernal.getSnapshotOps(this.slug)
         this.sendMessage(
@@ -50,11 +51,9 @@ export class ServerRoom {
       setSnapshot(this.slug, this.kernal.getSnapshotOps())
     }
 
-    if (source === 'remote' || source === 'database') {
-      this.broadcastMessage(
-        createMessage.patch(ops),
-      )
-    }
+    this.broadcastMessage(
+      createMessage.patch(ops),
+    )
 
     return this
   }
@@ -73,6 +72,18 @@ export class ServerRoom {
   removeClient(client) {
     if (!this.clients.has(client.id)) {
       return
+    }
+
+    // This is a little hacky cos it's hard coded...
+    // There needs to be an idea of "session" data.
+    const player = this.kernal.get('player', client.agentId)
+
+    if (player !== undefined) {
+      const playerCopy = JSON.parse(JSON.stringify(player))
+      playerCopy.online = false
+      this.kernal.applyOps([
+        createOp.set('player', client.agentId, [this.kernal.latestSeq + 1], playerCopy)
+      ], 'local')
     }
 
     this.clients.delete(client.id)
