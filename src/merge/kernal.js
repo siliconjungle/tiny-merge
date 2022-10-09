@@ -13,7 +13,7 @@ class Kernal {
   }
 
   getIds(type) {
-    return Object.keys(this.collections[type]) ?? []
+    return Object.keys(this.collections[type] ?? {}) ?? []
   }
 
   get(type, id) {
