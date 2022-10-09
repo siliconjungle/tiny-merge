@@ -9,7 +9,8 @@ export class Server {
     this.sockets = new Map()
 
     this.wss.on('connection', (ws, req) => {
-      const client = { ws, id: nanoid(), slug: req.url, alive: true, data: {} }
+      const url = (req.url ?? '/test').substring(1)
+      const client = { ws, id: nanoid(), slug: url, alive: true, data: {} }
       this.sockets.set(ws, client)
 
       const currentRoom = this.getRoomBySlug(req.url)

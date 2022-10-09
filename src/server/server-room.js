@@ -1,12 +1,18 @@
 import WebSocket from 'ws'
 import Kernal from '../merge/kernal'
 import { createMessage } from '../merge/messages'
+import { getSnapshot, setSnapshot } from './database'
 
 export class ServerRoom {
   constructor(slug) {
     this.clients = new Map()
     this.kernal = new Kernal(this.handleOps)
     this.slug = slug
+    getSnapshot(slug).then((snapshot) => {
+      if (snapshot.length > 0) {
+        this.kernal.applyOps(snapshot, 'database')
+      }
+    })
   }
 
   handleConnection = (client) => {
@@ -39,7 +45,12 @@ export class ServerRoom {
   }
 
   handleOps = (ops, source) => {
-    if (source === 'remote') {
+    if (source === 'local' || source === 'remote') {
+      // We don't wait for this to happen.
+      setSnapshot(this.slug, this.kernal.getSnapshotOps())
+    }
+
+    if (source === 'remote' || source === 'database') {
       this.broadcastMessage(
         createMessage.patch(ops),
       )
