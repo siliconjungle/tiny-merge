@@ -18,36 +18,31 @@ export class ServerRoom {
     })
   }
 
-  handleConnection (client) {
+  handleConnection = (client) => {
     this.addClient(client)
 
     return this
   }
 
-  async handleMessage(client, message) {
-    const { kernal } = this
-
+  handleMessage = async (client, message) => {
     switch (message.type) {
       case 'connect': {
         const { ops, agentId } = message
         client.agentId = agentId
 
-        const agent = await getAgent(agentId)
-
-        kernal.applyOps(agent, 'database')
-        kernal.applyOps(ops, 'remote')
-        const snapshotOps = kernal.getSnapshotOps(this.slug)
+        this.kernal.applyOps(ops, 'remote')
+        const snapshotOps = this.kernal.getSnapshotOps(this.slug)
         this.sendMessage(
           client,
-          createMessage.connect(snapshotOps)
+          createMessage.connect(agentId, snapshotOps)
         )
         // This should be compressed into a single message.
         // We are currently doing a bunch of inefficient work.
-        for (const [id, client] of this.clients) {
-          if (client.agentId) {
+        for (const [_, innerClient] of this.clients) {
+          if (innerClient.agentId) {
             this.sendMessage(
               client,
-              createMessage.connected(agentId)
+              createMessage.connected(innerClient.agentId)
             )
           }
         }
@@ -56,7 +51,7 @@ export class ServerRoom {
       }
       case 'patch': {
         const { ops } = message
-        kernal.applyOps(ops, 'remote')
+        this.kernal.applyOps(ops, 'remote')
         break
       }
     }
@@ -64,12 +59,12 @@ export class ServerRoom {
     return this
   }
 
-  handleOps(ops, source) {
+  handleOps = (ops, source) => {
     if (source === 'local' || source === 'remote') {
-      // We don't wait for this to happen.
       setSnapshot(this.slug, this.kernal.getSnapshotOps())
     }
 
+    // This should not be sent to the sender.
     this.broadcastMessage(
       createMessage.patch(ops),
     )
@@ -77,18 +72,18 @@ export class ServerRoom {
     return this
   }
 
-  handleClose(client) {
+  handleClose = (client) => {
     this.removeClient(client)
     return this
   }
 
-  addClient(client) {
+  addClient = (client) => {
     this.clients.set(client.id, client)
 
     return client
   }
 
-  removeClient(client) {
+  removeClient = (client) => {
     if (!this.clients.has(client.id)) {
       return
     }
@@ -100,16 +95,16 @@ export class ServerRoom {
     return client
   }
 
-  getClientById(id) {
+  getClientById = (id) => {
     return this.clients.get(id)
   }
 
-  sendMessage(client, message) {
+  sendMessage = (client, message) => {
     client.ws.send(JSON.stringify(message))
     return this
   }
 
-  broadcastMessage(message) {
+  broadcastMessage = (message) => {
     this.clients.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN) {
         client.ws.send(JSON.stringify(message))
@@ -118,7 +113,7 @@ export class ServerRoom {
     return this
   }
 
-  broadcastMessageExcluding(message, clientId) {
+  broadcastMessageExcluding = (message, clientId) => {
     this.clients.forEach((client) => {
       if (client.ws.readyState === WebSocket.OPEN && client.id !== clientId) {
         client.ws.send(JSON.stringify(message))
