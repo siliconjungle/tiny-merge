@@ -16,4 +16,12 @@ export const createMessage = {
     type: 'patch',
     ops,
   }),
+  connected: (agentId) => ({
+    type: 'connected',
+    agentId,
+  }),
+  disconnected: (agentId) => ({
+    type: 'disconnected',
+    agentId,
+  })
 }

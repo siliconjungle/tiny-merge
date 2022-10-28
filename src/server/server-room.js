@@ -1,7 +1,10 @@
 import WebSocket from 'ws'
 import Kernal from '../merge/kernal'
-import { createMessage, createOp } from '../merge/messages'
-import { getSnapshot, setSnapshot } from './database'
+import { createMessage } from '../merge/messages'
+import {
+  getSnapshot,
+  setSnapshot,
+} from './database'
 
 export class ServerRoom {
   constructor(slug) {
@@ -15,24 +18,30 @@ export class ServerRoom {
     })
   }
 
-  handleConnection = (client) => {
+  handleConnection (client) {
     this.addClient(client)
+
     return this
   }
 
-  handleMessage = async (client, message) => {
+  async handleMessage(client, message) {
     const { kernal } = this
 
     switch (message.type) {
       case 'connect': {
-        const { agentId, ops } = message
+        const { ops, agentId } = message
         client.agentId = agentId
+
+        const agent = await getAgent(agentId)
+
+        kernal.applyOps(agent, 'database')
         kernal.applyOps(ops, 'remote')
         const snapshotOps = kernal.getSnapshotOps(this.slug)
         this.sendMessage(
           client,
           createMessage.connect(snapshotOps)
         )
+        this.broadcastMessage(createMessage.connected(agentId))
         break
       }
       case 'patch': {
@@ -45,7 +54,7 @@ export class ServerRoom {
     return this
   }
 
-  handleOps = (ops, source) => {
+  handleOps(ops, source) {
     if (source === 'local' || source === 'remote') {
       // We don't wait for this to happen.
       setSnapshot(this.slug, this.kernal.getSnapshotOps())
@@ -58,7 +67,7 @@ export class ServerRoom {
     return this
   }
 
-  handleClose = (client) => {
+  handleClose(client) {
     this.removeClient(client)
     return this
   }
@@ -74,17 +83,7 @@ export class ServerRoom {
       return
     }
 
-    // This is a little hacky cos it's hard coded...
-    // There needs to be an idea of "session" data.
-    const player = this.kernal.get('player', client.agentId)
-
-    if (player !== undefined) {
-      const playerCopy = JSON.parse(JSON.stringify(player))
-      playerCopy.online = false
-      this.kernal.applyOps([
-        createOp.set('player', client.agentId, [this.kernal.latestSeq + 1], playerCopy)
-      ], 'local')
-    }
+    this.broadcastMessage(createMessage.disconnected(client.agentId))
 
     this.clients.delete(client.id)
 

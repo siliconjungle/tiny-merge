@@ -11,6 +11,7 @@ export class ClientRoom extends EventEmitter {
 		this.client.addListener('close', this.handleClose)
 		this.client.addListener('error', this.handleError)
 		this.client.addListener('message', this.handleMessage)
+		this.agentIds = []
 		this.kernal = new Kernal(this.handleOps)
 	}
 
@@ -18,14 +19,26 @@ export class ClientRoom extends EventEmitter {
 		this.client.addMessage(message)
 	}
 
-	handleOpen = () => {
+	handleOpen() {
 		const ops = this.kernal.getSnapshotOps()
 		this.client.addMessage(createMessage.connect(ops))
 	}
 
-	handleClose = () => {}
-	handleError = () => {}
-	handlePatch = () => {}
+	addAgentId(agentId) {
+		if (this.agentIds.find(agentId)) {
+			return
+		}
+
+		this.agentIds.push(agentId)
+	}
+
+	removeAgentId(agentId) {
+		this.agentIds = this.agentIds.filter((id) => id !== agentId)
+	}
+
+	handleClose() {}
+	handleError() {}
+	handlePatch() {}
 
 	handleOps = (ops, source) => {
 		if (source === 'remote') {
@@ -43,6 +56,14 @@ export class ClientRoom extends EventEmitter {
 			}
 			case 'patch': {
 				this.kernal.applyOps(message.ops, 'remote')
+				break
+			}
+			case 'connected': {
+				this.addAgentId(message.agentId)
+				break
+			}
+			case 'disconnected': {
+				this.removeAgentId(message.agentId)
 				break
 			}
 		}

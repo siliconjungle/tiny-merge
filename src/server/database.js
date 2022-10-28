@@ -3,11 +3,11 @@ import { supabaseUrl, supabaseKey } from './config'
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
-export const getSnapshot = async (id) => {
+export const getSnapshot = async (slug) => {
   const { data, error } = await supabase
   .from('rooms')
   .select('snapshot')
-  .is('slug', id)
+  .is('slug', slug)
 
   if (error) {
     // Probably doesn't exist.
@@ -18,10 +18,10 @@ export const getSnapshot = async (id) => {
   return JSON.parse(data[0].snapshot)
 }
 
-export const setSnapshot = async (id, snapshot) => {
+export const setSnapshot = async (slug, snapshot) => {
   const { data, error } = await supabase
     .from('rooms')
-    .insert({ snapshot: JSON.stringify(snapshot), slug: id })
+    .insert({ snapshot: JSON.stringify(snapshot), slug })
     .single()
 
   if (error) {
