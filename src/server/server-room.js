@@ -41,7 +41,17 @@ export class ServerRoom {
           client,
           createMessage.connect(snapshotOps)
         )
-        this.broadcastMessage(createMessage.connected(agentId))
+        // This should be compressed into a single message.
+        // We are currently doing a bunch of inefficient work.
+        for (const [id, client] of this.clients) {
+          if (client.agentId) {
+            this.sendMessage(
+              client,
+              createMessage.connected(agentId)
+            )
+          }
+        }
+        this.broadcastMessageExcluding(createMessage.connected(agentId), client.id)
         break
       }
       case 'patch': {
@@ -83,7 +93,7 @@ export class ServerRoom {
       return
     }
 
-    this.broadcastMessage(createMessage.disconnected(client.agentId))
+    this.broadcastMessageExcluding(createMessage.disconnected(client.agentId), client.id)
 
     this.clients.delete(client.id)
 

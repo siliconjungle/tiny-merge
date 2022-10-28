@@ -1,4 +1,5 @@
 import EventEmitter from 'events'
+import { nanoid } from 'nanoid'
 import Client from './Client'
 import Kernal from '../merge/kernal'
 import { createMessage } from './merge'
@@ -11,7 +12,10 @@ export class ClientRoom extends EventEmitter {
 		this.client.addListener('close', this.handleClose)
 		this.client.addListener('error', this.handleError)
 		this.client.addListener('message', this.handleMessage)
-		this.agentIds = []
+		this.agentId = nanoid()
+		this.agentIds = [
+			this.agentId,
+		]
 		this.kernal = new Kernal(this.handleOps)
 	}
 
@@ -21,7 +25,7 @@ export class ClientRoom extends EventEmitter {
 
 	handleOpen() {
 		const ops = this.kernal.getSnapshotOps()
-		this.client.addMessage(createMessage.connect(ops))
+		this.client.addMessage(createMessage.connect(this.agentId, ops))
 	}
 
 	addAgentId(agentId) {

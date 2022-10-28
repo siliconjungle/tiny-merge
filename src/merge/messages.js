@@ -8,8 +8,9 @@ export const createOp = {
 }
 
 export const createMessage = {
-  connect: (ops) => ({
+  connect: (agentId, ops) => ({
     type: 'connect',
+    agentId,
     ops,
   }),
   patch: (ops) => ({
