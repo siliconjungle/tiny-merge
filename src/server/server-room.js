@@ -1,5 +1,6 @@
 import WebSocket from 'ws'
-import Kernal from '../merge/kernal'
+// import Kernal from '../merge/kernal'
+import Kernal from '../merge/kernal-type'
 import { createMessage } from '../merge/messages'
 import {
   getSnapshot,
