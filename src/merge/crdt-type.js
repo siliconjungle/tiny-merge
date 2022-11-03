@@ -162,10 +162,17 @@ export const document = {
   content: 'string',
 }
 
+export const tileset = {
+  blob: 'string',
+  width: 'number',
+  height: 'number',
+}
+
 export const typeDefs = {
   player: createTypeMetadata(player),
   map: createTypeMetadata(map),
   editor: createTypeMetadata(editor),
   portal: createTypeMetadata(portal),
   document: createTypeMetadata(document),
+  tileset: createTypeMetadata(tileset),
 }
